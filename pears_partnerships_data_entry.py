@@ -1,7 +1,9 @@
 import os
 import pandas as pd
+import numpy as np
 
-import smtplib,ssl
+import smtplib
+import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
@@ -29,28 +31,28 @@ IA_IC = pd.read_excel(Indirect_Activities_Export, 'Intervention Channels')
 IA_IC = IA_IC.loc[~IA_IC['activity'].str.contains('(?i)TEST', regex=True)]
 IA_IC_Data = pd.merge(IA_Data, IA_IC, how='inner', on='activity_id')
 
-sites = pd.read_excel(pears_export_path + '\\' + "Site_Export.xlsx", sheet_name='Site Data')
+sites = pd.read_excel(pears_export_path + '/' + "Site_Export.xlsx", sheet_name='Site Data')
 sites = sites.loc[sites['is_active'] == 1]
 
 Partnerships_Export = pd.ExcelFile(pears_export_path + '/' + "Partnership_Export.xlsx")
 Part_Data = pd.read_excel(Partnerships_Export, 'Partnership Data')
 Part_Data = Part_Data.loc[Part_Data['program_area'] == 'SNAP-Ed']
 
-Partnerships_2021 = pd.read_excel(
-    r"C:\Users\jstadni2\Box\FCS Data Analyst\Data Backups\PEARS\FY21\12.21.21 Manual Export\Partnership-Export.xlsx",
-    sheet_name='Partnership Data')
+Partnerships_2021 = pd.read_excel(pears_export_path + '/' + "Partnership_Export_2021.xlsx",
+                                  sheet_name='Partnership Data')
 
-FY22_INEP_Staff = pd.read_excel(r"C:\Users\jstadni2\Box\INEP Staff Lists\FY22 INEP Staff List.xlsx",
-                                sheet_name='SNAP-Ed Staff List', header=1)
+FY22_INEP_Staff = pd.read_excel(ROOT_DIR + "/example_inputs/FY22_INEP_Staff_List.xlsx",
+                                sheet_name='SNAP-Ed Staff List')
 User_Export = pd.read_excel(pears_export_path + '/' + "User_Export.xlsx", sheet_name='User Data')
-Unit_Counties = pd.read_excel(
-    r"C:\Users\jstadni2\Box\FCS Data Analyst\PEARS FY22\PEARS Data Cleaning\Illinois Extension Unit Counties.xlsx",
-    sheet_name='PEARS Units')
+
+# Import lookup table for counties to unit
+unit_counties = pd.read_excel(ROOT_DIR + "/example_inputs/Illinois Extension Unit Counties.xlsx",
+                              sheet_name='PEARS Units')
+# Alternatively, use the absolute path to the counties to unit lookup table
+# unit_counties = pd.read_excel(r"\path\to\Illinois Extension Unit Counties.xlsx")
 
 # Partnerships Data Entry Report
 
-
-import numpy as np
 
 Part_Data = Part_Data.loc[
     ~Part_Data['partnership_name'].str.contains('TEST'), ['partnership_id', 'partnership_name', 'reported_by',
@@ -77,7 +79,6 @@ IA_IC_Data['id'] = 'ia' + IA_IC_Data['activity_id'].astype('str')
 IA_IC_Data = IA_IC_Data.loc[(~IA_IC_Data['title'].str.contains('TEST')) & (
     ~IA_IC_Data['site_name'].str.contains('|'.join(exclude_sites), na=True))]
 
-# Part_Entry = PA_Data[['id', 'program_areas', 'action_plans', 'comments', 'unit', 'site_id', 'site_name', 'site_address', 'site_city', 'site_state', 'site_zip', 'parent_site_name', 'site_id_child']].rename(columns={'program_areas' : 'program_area', 'action_plans' : 'action_plan_name'}).append(IA_IC_Data[['id', 'program_area', 'action_plan_name', 'unit', 'site_id', 'site_name', 'site_address', 'site_city', 'site_state', 'site_zip']]).drop_duplicates(subset='site_id', keep='first')
 Part_Entry = PA_Data[
     ['id', 'program_areas', 'comments', 'unit', 'site_id', 'site_name', 'site_address', 'site_city', 'site_state',
      'site_zip', 'parent_site_name', 'site_id_child', 'snap_ed_grant_goals', 'snap_ed_special_projects',
@@ -108,8 +109,8 @@ Part_Entry.loc[Part_Entry['id'].str.contains('pa'), 'is_direct_education_interve
 Part_Entry.loc[Part_Entry['id'].str.contains('ia'), 'is_direct_education_intervention'] = 0
 
 Part_Entry['collaborator_unit'] = Part_Entry['partnership_unit']
-Part_Entry = pd.merge(Part_Entry, Unit_Counties, how='left', left_on='partnership_unit', right_on='County')
-Part_Entry.loc[Part_Entry['partnership_unit'].isin(Unit_Counties['County']), 'collaborator_unit'] = Part_Entry['Unit']
+Part_Entry = pd.merge(Part_Entry, unit_counties, how='left', left_on='partnership_unit', right_on='County')
+Part_Entry.loc[Part_Entry['partnership_unit'].isin(unit_counties['County']), 'collaborator_unit'] = Part_Entry['Unit']
 Part_Entry = Part_Entry.drop(columns={'Unit', 'County'})
 staff_nulls = ('N/A', 'NEW', 'OPEN', np.nan)
 Collaborators = FY22_INEP_Staff.loc[FY22_INEP_Staff['JOB CLASS'].isin(['EPC', 'UE']), ['JOB CLASS', 'E-MAIL', 'COUNTY']]
@@ -126,7 +127,7 @@ Part_Collaborators = Part_Collaborators.groupby('partnership_name').agg(lambda x
 Part_Collaborators = Part_Collaborators.drop(columns={'collaborator_unit', 'unit'})
 Part_Entry = pd.merge(Part_Entry, Part_Collaborators, how='left', on='partnership_name').drop(
     columns=['collaborator_unit'])
-Part_Entry['collaborators'] = [', '.join(map(str, l)) for l in Part_Entry['collaborators']]
+Part_Entry['collaborators'] = [', '.join(map(str, list)) for list in Part_Entry['collaborators']]
 
 Part_Entry['relationship_depth'] = 'Cooperator'
 Part_Entry['assessment_tool'] = 'None'
@@ -159,17 +160,17 @@ prev_month = pd.to_datetime(ts).to_period('M')
 
 out_path = ROOT_DIR + "/example_outputs"
 
-## SNAP-Ed Workbook
+# SNAP-Ed Workbook
 
 
 SNAPED_c_parts_site_id = c_parts_site_id_out.loc[c_parts_site_id['partnership_unit'] != 'CPHP (District)']
 SNAPED_new_parts = new_parts.loc[new_parts['partnership_unit'] != 'CPHP (District)']
 
-dfs1 = {'New Partnerships': SNAPED_new_parts, 'Copy Forward - Site ID Matches': SNAPED_c_parts_site_id}
+fcs_dfs = {'New Partnerships': SNAPED_new_parts, 'Copy Forward - Site ID Matches': SNAPED_c_parts_site_id}
 
-filename1 = 'SNAP-Ed Partnerships Data Entry ' + prev_month.strftime('%Y-%m') + '.xlsx'
+fcs_filename = 'SNAP-Ed Partnerships Data Entry ' + prev_month.strftime('%Y-%m') + '.xlsx'
 
-file_path1 = out_path + '/' + filename1
+fcs_file_path = out_path + '/' + fcs_filename
 
 
 def write_report(file_path, dfs_dict):
@@ -188,21 +189,21 @@ def write_report(file_path, dfs_dict):
     writer.save()
 
 
-write_report(file_path1, dfs1)
+write_report(fcs_file_path, fcs_dfs)
 
-## CPHP Workbook
+# CPHP Workbook
 
 
 CPHP_c_parts_site_id = c_parts_site_id_out.loc[c_parts_site_id['partnership_unit'] == 'CPHP (District)']
 CPHP_new_parts = new_parts.loc[new_parts['partnership_unit'] == 'CPHP (District)']
 
-dfs2 = {'New Partnerships': CPHP_new_parts, 'Copy Forward - Site ID Matches': CPHP_c_parts_site_id}
+cphp_dfs = {'New Partnerships': CPHP_new_parts, 'Copy Forward - Site ID Matches': CPHP_c_parts_site_id}
 
-filename2 = 'CPHP Partnerships Data Entry ' + prev_month.strftime('%Y-%m') + '.xlsx'
+cphp_filename = 'CPHP Partnerships Data Entry ' + prev_month.strftime('%Y-%m') + '.xlsx'
 
-file_path2 = out_path + '\\' + filename2
+cphp_file_path = out_path + '/' + cphp_filename
 
-write_report(file_path2, dfs2)
+write_report(cphp_file_path, cphp_dfs)
 
 
 # Email Data Entry Report
@@ -267,9 +268,9 @@ def send_mail(send_from,
 
 
 report_recipients = 'recipient@domain.com'
-report_subject = 'PEARS Sites Report ' + prev_month.strftime('%Y-%m')
+fcs_report_subject = 'PEARS Sites Report ' + prev_month.strftime('%Y-%m')
 
-html1 = """<html>
+report_html = """<html>
   <head></head>
 <body>
             <p>
@@ -297,9 +298,29 @@ html1 = """<html>
 </html>
 """
 
-send_mail(send_from, send_to1, Cc, subject1, html1, file_path1, filename1, username, password, isTls=True)
+send_mail(send_from=admin_send_from,
+          send_to=report_recipients,
+          cc=report_cc,
+          subject=fcs_report_subject,
+          html=report_html,
+          username=admin_username,
+          password=admin_password,
+          wb=True,
+          is_tls=True,
+          file_path=fcs_file_path,
+          filename=fcs_filename)
 
-subject2 = 'CPHP Partnerships Data Entry ' + prev_month.strftime('%Y-%m')
+cphp_report_subject = 'CPHP Partnerships Data Entry ' + prev_month.strftime('%Y-%m')
 
-if any(x.empty is False for x in dfs2.values()):
-    send_mail(send_from, send_to1, Cc, subject2, html1, file_path2, filename2, username, password, isTls=True)
+if any(x.empty is False for x in cphp_dfs.values()):
+    send_mail(send_from=admin_send_from,
+              send_to=report_recipients,
+              cc=report_cc,
+              subject=cphp_report_subject,
+              html=report_html,
+              username=admin_username,
+              password=admin_password,
+              wb=True,
+              is_tls=True,
+              file_path=cphp_file_path,
+              filename=cphp_filename)
