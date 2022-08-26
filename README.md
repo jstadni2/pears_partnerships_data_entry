@@ -37,7 +37,7 @@ The following steps are required to execute the PEARS Partnerships Data Entry sc
 
 ### Additional setup considerations
 
-- The formatting of PEARS export workbooks changes periodically. The example PEARS exports included in the [/example_inputs](https://github.com/jstadni2/pears_partnerships_data_entry/tree/master/example_inputs) directory are based on workbooks downloaded on 08/12/22.
+- The formatting of PEARS export workbooks changes periodically. The example PEARS exports included in the [/example_inputs](https://github.com/jstadni2/pears_partnerships_data_entry/tree/master/example_inputs) directory are based on workbooks downloaded on 08/26/22.
 Modifications to `pears_partnerships_data_entry.py` may be necessary to run with subsequent PEARS exports.
 - Illinois Extension utilized [Task Scheduler](https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page) to run this script from a Windows PC on a monthly basis.
 - Plans to deploy the PEARS Partnerships Data Entry script on AWS were never implemented and are currently beyond the scope of this repository.
@@ -47,7 +47,8 @@ Modifications to `pears_partnerships_data_entry.py` may be necessary to run with
 ## Input Files
 
 The following input files are required to run the PEARS Partnerships Data Entry script:
-- {Describe input files here}
+- [FY22_INEP_Staff_List.xlsx](https://github.com/jstadni2/pears_partnerships_data_entry/blob/master/example_inputs/FY22_INEP_Staff_List.xlsx): A workbook that compiles various lists of INEP staff.
+- [Illinois Extension Unit Counties.xlsx](https://github.com/jstadni2/pears_partnerships_data_entry/blob/master/example_inputs/Illinois%20Extension%20Unit%20Counties.xlsx): A workbook that maps Illinois counties to Illinois Extension units.
 - Reformatted PEARS module exports output from the [PEARS Nightly Export Reformatting script](https://github.com/jstadni2/pears_nightly_export_reformatting):
     - [Coalition_Export.xlsx](https://github.com/jstadni2/pears_partnerships_data_entry/blob/master/example_inputs/Coalition_Export.xlsx)
     - [Indirect_Activity_Export.xlsx](https://github.com/jstadni2/pears_partnerships_data_entry/blob/master/example_inputs/Indirect_Activity_Export.xlsx)
@@ -61,6 +62,8 @@ PEARS module exports included as example files are generated using the [Faker](h
 ## Output Files
 
 The following output files are produced by the PEARS Partnerships Data Entry script:
-- {Describe output files here}
+- [CPHP Partnerships Data Entry YYYY-MM.xlsx](https://github.com/jstadni2/pears_partnerships_data_entry/blob/master/example_outputs/CPHP%20Partnerships%20Data%20Entry%202022-07.xlsx): A workbook that compiles the Partnerships to enter based on CPHP PEARS records.
+- [SNAP-Ed Partnerships Data Entry YYYY-MM.xlsx](https://github.com/jstadni2/pears_partnerships_data_entry/blob/master/example_outputs/SNAP-Ed%20Partnerships%20Data%20Entry%202022-07.xlsx): A workbook that compiles the Partnerships to enter based on SNAP-Ed PEARS records
+
 
 Example output files are provided in the [/example_outputs](https://github.com/jstadni2/pears_partnerships_data_entry/tree/master/example_outputs) directory.
